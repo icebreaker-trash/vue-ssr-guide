@@ -1,0 +1,34 @@
+<!doctype html>
+<html data-n-head-ssr>
+  <head>
+    <link rel="preload" href="/_nuxt/5b903e67bf481398d707.js" as="script"><link rel="preload" href="/_nuxt/908266514fa462135bf0.js" as="script"><link rel="preload" href="/_nuxt/5503a04a5d2f36b0d6f4.js" as="script"><link rel="preload" href="/_nuxt/2f480862b771e7e31847.js" as="script"><style data-vue-ssr-id="57312d8d:0 250be73c:0 70ec8e52:0">.nuxt-progress{position:fixed;top:0;left:0;right:0;height:2px;width:0;opacity:1;-webkit-transition:width .1s,opacity .4s;transition:width .1s,opacity .4s;background-color:#000;z-index:999999}.nuxt-progress.nuxt-progress-notransition{-webkit-transition:none;transition:none}.nuxt-progress-failed{background-color:red}.doc-container[data-v-6ef68715]{padding-bottom:50px}.controls[data-v-9a4e02f8]{position:fixed;bottom:0;left:0;right:0;color:grey;opacity:.8}.controls .btn[data-v-9a4e02f8]{height:48px}.controls .btn.prev[data-v-9a4e02f8]{width:38%}.controls .btn.next[data-v-9a4e02f8]{width:61%}</style>
+  </head>
+  <body>
+    <div data-server-rendered="true" id="__nuxt"><!----><div id="__layout"><section class="doc-container" data-v-6ef68715><div data-v-6ef68715><h1 id="编写通用代码">编写通用代码</h1>
+<p>在进一步介绍之前，让我们花点时间来讨论编写"通用"代码时的约束条件 - 即运行在服务器和客户端的代码。由于用例和平台 API 的差异，当运行在不同环境中时，我们的代码将不会完全相同。所以这里我们将会阐述你需要理解的关键事项。</p>
+<h2 id="服务器上的数据响应">服务器上的数据响应</h2>
+<p>在纯客户端应用程序 (client-only app) 中，每个用户会在他们各自的浏览器中使用新的应用程序实例。对于服务器端渲染，我们也希望如此：每个请求应该都是全新的、独立的应用程序实例，以便不会有交叉请求造成的状态污染 (cross-request state pollution)。</p>
+<p>因为实际的渲染过程需要确定性，所以我们也将在服务器上“预取”数据 ("pre-fetching" data) - 这意味着在我们开始渲染时，我们的应用程序就已经解析完成其状态。也就是说，将数据进行响应式的过程在服务器上是多余的，所以默认情况下禁用。禁用响应式数据，还可以避免将「数据」转换为「响应式对象」的性能开销。</p>
+<h2 id="组件生命周期钩子函数">组件生命周期钩子函数</h2>
+<p>由于没有动态更新，所有的生命周期钩子函数中，只有 <code>beforeCreate</code> 和 <code>created</code> 会在服务器端渲染 (SSR) 过程中被调用。这就是说任何其他生命周期钩子函数中的代码（例如 <code>beforeMount</code> 或 <code>mounted</code>），只会在客户端执行。</p>
+<p>此外还需要注意的是，你应该避免在 <code>beforeCreate</code> 和 <code>created</code> 生命周期时产生全局副作用的代码，例如在其中使用 <code>setInterval</code> 设置 timer。在纯客户端 (client-side only) 的代码中，我们可以设置一个 timer，然后在 <code>beforeDestroy</code> 或 <code>destroyed</code> 生命周期时将其销毁。但是，由于在 SSR 期间并不会调用销毁钩子函数，所以 timer 将永远保留下来。为了避免这种情况，请将副作用代码移动到 <code>beforeMount</code> 或 <code>mounted</code> 生命周期中。</p>
+<h2 id="访问特定平台platform-specific-api">访问特定平台(Platform-Specific) API</h2>
+<p>通用代码不可接受特定平台的 API，因此如果你的代码中，直接使用了像 <code>window</code> 或 <code>document</code>，这种仅浏览器可用的全局变量，则会在 Node.js 中执行时抛出错误，反之也是如此。</p>
+<p>对于共享于服务器和客户端，但用于不同平台 API 的任务(task)，建议将平台特定实现包含在通用 API 中，或者使用为你执行此操作的 library。例如，<a href="https://github.com/axios/axios">axios</a> 是一个 HTTP 客户端，可以向服务器和客户端都暴露相同的 API。</p>
+<p>对于仅浏览器可用的 API，通常方式是，在「纯客户端 (client-only)」的生命周期钩子函数中惰性访问 (lazily access) 它们。</p>
+<p>请注意，考虑到如果第三方 library 不是以上面的通用用法编写，则将其集成到服务器渲染的应用程序中，可能会很棘手。你<em>可能</em>要通过模拟 (mock) 一些全局变量来使其正常运行，但这只是 hack 的做法，并且可能会干扰到其他 library 的环境检测代码。</p>
+<h2 id="自定义指令">自定义指令</h2>
+<p>大多数自定义指令直接操作 DOM，因此会在服务器端渲染 (SSR) 过程中导致错误。有两种方法可以解决这个问题：</p>
+<ol>
+<li><p>推荐使用组件作为抽象机制，并运行在「虚拟 DOM 层级(Virtual-DOM level)」（例如，使用渲染函数(render function)）。</p>
+</li>
+<li><p>如果你有一个自定义指令，但是不是很容易替换为组件，则可以在创建服务器 renderer 时，使用 <a href="../api/#directives"><code>directives</code></a> 选项所提供"服务器端版本(server-side version)"。</p>
+</li>
+</ol>
+</div> <div class="controls" data-v-9a4e02f8 data-v-6ef68715><a href="/14" data-v-9a4e02f8><button class="btn prev" data-v-9a4e02f8>
+      上一页
+    </button></a> <button disabled class="btn next" data-v-9a4e02f8>
+    下一页
+  </button></div></section></div></div><script>window.__NUXT__={layout:"default",data:[{sourceIndex:14,sourceLength:15,source:'<h1 id="编写通用代码">编写通用代码</h1>\n<p>在进一步介绍之前，让我们花点时间来讨论编写&quot;通用&quot;代码时的约束条件 - 即运行在服务器和客户端的代码。由于用例和平台 API 的差异，当运行在不同环境中时，我们的代码将不会完全相同。所以这里我们将会阐述你需要理解的关键事项。</p>\n<h2 id="服务器上的数据响应">服务器上的数据响应</h2>\n<p>在纯客户端应用程序 (client-only app) 中，每个用户会在他们各自的浏览器中使用新的应用程序实例。对于服务器端渲染，我们也希望如此：每个请求应该都是全新的、独立的应用程序实例，以便不会有交叉请求造成的状态污染 (cross-request state pollution)。</p>\n<p>因为实际的渲染过程需要确定性，所以我们也将在服务器上“预取”数据 (&quot;pre-fetching&quot; data) - 这意味着在我们开始渲染时，我们的应用程序就已经解析完成其状态。也就是说，将数据进行响应式的过程在服务器上是多余的，所以默认情况下禁用。禁用响应式数据，还可以避免将「数据」转换为「响应式对象」的性能开销。</p>\n<h2 id="组件生命周期钩子函数">组件生命周期钩子函数</h2>\n<p>由于没有动态更新，所有的生命周期钩子函数中，只有 <code>beforeCreate</code> 和 <code>created</code> 会在服务器端渲染 (SSR) 过程中被调用。这就是说任何其他生命周期钩子函数中的代码（例如 <code>beforeMount</code> 或 <code>mounted</code>），只会在客户端执行。</p>\n<p>此外还需要注意的是，你应该避免在 <code>beforeCreate</code> 和 <code>created</code> 生命周期时产生全局副作用的代码，例如在其中使用 <code>setInterval</code> 设置 timer。在纯客户端 (client-side only) 的代码中，我们可以设置一个 timer，然后在 <code>beforeDestroy</code> 或 <code>destroyed</code> 生命周期时将其销毁。但是，由于在 SSR 期间并不会调用销毁钩子函数，所以 timer 将永远保留下来。为了避免这种情况，请将副作用代码移动到 <code>beforeMount</code> 或 <code>mounted</code> 生命周期中。</p>\n<h2 id="访问特定平台platform-specific-api">访问特定平台(Platform-Specific) API</h2>\n<p>通用代码不可接受特定平台的 API，因此如果你的代码中，直接使用了像 <code>window</code> 或 <code>document</code>，这种仅浏览器可用的全局变量，则会在 Node.js 中执行时抛出错误，反之也是如此。</p>\n<p>对于共享于服务器和客户端，但用于不同平台 API 的任务(task)，建议将平台特定实现包含在通用 API 中，或者使用为你执行此操作的 library。例如，<a href="https://github.com/axios/axios">axios</a> 是一个 HTTP 客户端，可以向服务器和客户端都暴露相同的 API。</p>\n<p>对于仅浏览器可用的 API，通常方式是，在「纯客户端 (client-only)」的生命周期钩子函数中惰性访问 (lazily access) 它们。</p>\n<p>请注意，考虑到如果第三方 library 不是以上面的通用用法编写，则将其集成到服务器渲染的应用程序中，可能会很棘手。你<em>可能</em>要通过模拟 (mock) 一些全局变量来使其正常运行，但这只是 hack 的做法，并且可能会干扰到其他 library 的环境检测代码。</p>\n<h2 id="自定义指令">自定义指令</h2>\n<p>大多数自定义指令直接操作 DOM，因此会在服务器端渲染 (SSR) 过程中导致错误。有两种方法可以解决这个问题：</p>\n<ol>\n<li><p>推荐使用组件作为抽象机制，并运行在「虚拟 DOM 层级(Virtual-DOM level)」（例如，使用渲染函数(render function)）。</p>\n</li>\n<li><p>如果你有一个自定义指令，但是不是很容易替换为组件，则可以在创建服务器 renderer 时，使用 <a href="../api/#directives"><code>directives</code></a> 选项所提供&quot;服务器端版本(server-side version)&quot;。</p>\n</li>\n</ol>\n'}],error:null,serverRendered:!0}</script><script src="/_nuxt/5b903e67bf481398d707.js" defer></script><script src="/_nuxt/2f480862b771e7e31847.js" defer></script><script src="/_nuxt/908266514fa462135bf0.js" defer></script><script src="/_nuxt/5503a04a5d2f36b0d6f4.js" defer></script>
+  </body>
+</html>

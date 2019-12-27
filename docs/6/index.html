@@ -1,0 +1,75 @@
+<!doctype html>
+<html data-n-head-ssr>
+  <head>
+    <link rel="preload" href="/_nuxt/5b903e67bf481398d707.js" as="script"><link rel="preload" href="/_nuxt/908266514fa462135bf0.js" as="script"><link rel="preload" href="/_nuxt/5503a04a5d2f36b0d6f4.js" as="script"><link rel="preload" href="/_nuxt/2f480862b771e7e31847.js" as="script"><style data-vue-ssr-id="57312d8d:0 250be73c:0 70ec8e52:0">.nuxt-progress{position:fixed;top:0;left:0;right:0;height:2px;width:0;opacity:1;-webkit-transition:width .1s,opacity .4s;transition:width .1s,opacity .4s;background-color:#000;z-index:999999}.nuxt-progress.nuxt-progress-notransition{-webkit-transition:none;transition:none}.nuxt-progress-failed{background-color:red}.doc-container[data-v-6ef68715]{padding-bottom:50px}.controls[data-v-9a4e02f8]{position:fixed;bottom:0;left:0;right:0;color:grey;opacity:.8}.controls .btn[data-v-9a4e02f8]{height:48px}.controls .btn.prev[data-v-9a4e02f8]{width:38%}.controls .btn.next[data-v-9a4e02f8]{width:61%}</style>
+  </head>
+  <body>
+    <div data-server-rendered="true" id="__nuxt"><!----><div id="__layout"><section class="doc-container" data-v-6ef68715><div data-v-6ef68715><h1 id="缓存">缓存</h1>
+<p>虽然 Vue 的服务器端渲染 (SSR) 相当快速，但是由于创建组件实例和虚拟 DOM 节点的开销，无法与纯基于字符串拼接 (pure string-based) 的模板的性能相当。在 SSR 性能至关重要的情况下，明智地利用缓存策略，可以极大改善响应时间并减少服务器负载。</p>
+<h2 id="页面级别缓存-page-level-caching">页面级别缓存 (Page-level Caching)</h2>
+<p>在大多数情况下，服务器渲染的应用程序依赖于外部数据，因此本质上页面内容是动态的，不能持续长时间缓存。然而，如果内容不是用户特定 (user-specific)（即对于相同的 URL，总是为所有用户渲染相同的内容），我们可以利用名为 <a href="https://www.nginx.com/blog/benefits-of-microcaching-nginx/">micro-caching</a> 的缓存策略，来大幅度提高应用程序处理高流量的能力。</p>
+<p>这通常在 Nginx 层完成，但是我们也可以在 Node.js 中实现它：</p>
+<pre><code class="language-js">const microCache = LRU({
+  max: 100,
+  maxAge: 1000 // 重要提示：条目在 1 秒后过期。
+})
+
+const isCacheable = req => {
+  // 实现逻辑为，检查请求是否是用户特定(user-specific)。
+  // 只有非用户特定 (non-user-specific) 页面才会缓存
+}
+
+server.get('*', (req, res) => {
+  const cacheable = isCacheable(req)
+  if (cacheable) {
+    const hit = microCache.get(req.url)
+    if (hit) {
+      return res.end(hit)
+    }
+  }
+
+  renderer.renderToString((err, html) => {
+    res.end(html)
+    if (cacheable) {
+      microCache.set(req.url, html)
+    }
+  })
+})</code></pre>
+<p>由于内容缓存只有一秒钟，用户将无法查看过期的内容。然而，这意味着，对于每个要缓存的页面，服务器最多只能每秒执行一次完整渲染。</p>
+<h2 id="组件级别缓存-component-level-caching">组件级别缓存 (Component-level Caching)</h2>
+<p><code>vue-server-renderer</code> 内置支持组件级别缓存 (component-level caching)。要启用组件级别缓存，你需要在创建 renderer 时提供<a href="../api/#cache">具体缓存实现方式(cache implementation)</a>。典型做法是传入 <a href="https://github.com/isaacs/node-lru-cache">lru-cache</a>：</p>
+<pre><code class="language-js">const LRU = require('lru-cache')
+
+const renderer = createRenderer({
+  cache: LRU({
+    max: 10000,
+    maxAge: ...
+  })
+})</code></pre>
+<p>然后，你可以通过实现 <code>serverCacheKey</code> 函数来缓存组件。</p>
+<pre><code class="language-js">export default {
+  name: 'item', // 必填选项
+  props: ['item'],
+  serverCacheKey: props => props.item.id,
+  render (h) {
+    return h('div', this.item.id)
+  }
+}</code></pre>
+<p>请注意，可缓存组件<strong>还必须定义一个唯一的 <code>name</code> 选项</strong>。通过使用唯一的名称，每个缓存键 (cache key) 对应一个组件：你无需担心两个组件返回同一个 key。</p>
+<p><code>serverCacheKey</code> 返回的 key 应该包含足够的信息，来表示渲染结果的具体情况。如果渲染结果仅由 <code>props.item.id</code> 决定，则上述是一个很好的实现。但是，如果具有相同 id 的 item 可能会随时间而变化，或者如果渲染结果依赖于其他 prop，则需要修改 <code>serverCacheKey</code> 的实现，以考虑其他变量。</p>
+<p>返回常量将导致组件始终被缓存，这对纯静态组件是有好处的。</p>
+<h3 id="何时使用组件缓存">何时使用组件缓存</h3>
+<p>如果 renderer 在组件渲染过程中进行缓存命中，那么它将直接重新使用整个子树的缓存结果。这意味着在以下情况，你<strong>不</strong>应该缓存组件：</p>
+<ul>
+<li>它具有可能依赖于全局状态的子组件。</li>
+<li>它具有对渲染<code>上下文</code>产生副作用(side effect)的子组件。</li>
+</ul>
+<p>因此，应该小心使用组件缓存来解决性能瓶颈。在大多数情况下，你不应该也不需要缓存单一实例组件。适用于缓存的最常见类型的组件，是在大的 <code>v-for</code> 列表中重复出现的组件。由于这些组件通常由数据库集合(database collection)中的对象驱动，它们可以使用简单的缓存策略：使用其唯一 id，再加上最后更新的时间戳，来生成其缓存键(cache key)：</p>
+<pre><code class="language-js">serverCacheKey: props => props.item.id + '::' + props.item.last_updated</code></pre>
+</div> <div class="controls" data-v-9a4e02f8 data-v-6ef68715><a href="/5" data-v-9a4e02f8><button class="btn prev" data-v-9a4e02f8>
+      上一页
+    </button></a> <a href="/7" data-v-9a4e02f8><button class="btn next" data-v-9a4e02f8>
+      下一页
+    </button></a></div></section></div></div><script>window.__NUXT__={layout:"default",data:[{sourceIndex:5,sourceLength:15,source:'<h1 id="缓存">缓存</h1>\n<p>虽然 Vue 的服务器端渲染 (SSR) 相当快速，但是由于创建组件实例和虚拟 DOM 节点的开销，无法与纯基于字符串拼接 (pure string-based) 的模板的性能相当。在 SSR 性能至关重要的情况下，明智地利用缓存策略，可以极大改善响应时间并减少服务器负载。</p>\n<h2 id="页面级别缓存-page-level-caching">页面级别缓存 (Page-level Caching)</h2>\n<p>在大多数情况下，服务器渲染的应用程序依赖于外部数据，因此本质上页面内容是动态的，不能持续长时间缓存。然而，如果内容不是用户特定 (user-specific)（即对于相同的 URL，总是为所有用户渲染相同的内容），我们可以利用名为 <a href="https://www.nginx.com/blog/benefits-of-microcaching-nginx/">micro-caching</a> 的缓存策略，来大幅度提高应用程序处理高流量的能力。</p>\n<p>这通常在 Nginx 层完成，但是我们也可以在 Node.js 中实现它：</p>\n<pre><code class="language-js">const microCache = LRU({\n  max: 100,\n  maxAge: 1000 // 重要提示：条目在 1 秒后过期。\n})\n\nconst isCacheable = req =&gt; {\n  // 实现逻辑为，检查请求是否是用户特定(user-specific)。\n  // 只有非用户特定 (non-user-specific) 页面才会缓存\n}\n\nserver.get(&#39;*&#39;, (req, res) =&gt; {\n  const cacheable = isCacheable(req)\n  if (cacheable) {\n    const hit = microCache.get(req.url)\n    if (hit) {\n      return res.end(hit)\n    }\n  }\n\n  renderer.renderToString((err, html) =&gt; {\n    res.end(html)\n    if (cacheable) {\n      microCache.set(req.url, html)\n    }\n  })\n})</code></pre>\n<p>由于内容缓存只有一秒钟，用户将无法查看过期的内容。然而，这意味着，对于每个要缓存的页面，服务器最多只能每秒执行一次完整渲染。</p>\n<h2 id="组件级别缓存-component-level-caching">组件级别缓存 (Component-level Caching)</h2>\n<p><code>vue-server-renderer</code> 内置支持组件级别缓存 (component-level caching)。要启用组件级别缓存，你需要在创建 renderer 时提供<a href="../api/#cache">具体缓存实现方式(cache implementation)</a>。典型做法是传入 <a href="https://github.com/isaacs/node-lru-cache">lru-cache</a>：</p>\n<pre><code class="language-js">const LRU = require(&#39;lru-cache&#39;)\n\nconst renderer = createRenderer({\n  cache: LRU({\n    max: 10000,\n    maxAge: ...\n  })\n})</code></pre>\n<p>然后，你可以通过实现 <code>serverCacheKey</code> 函数来缓存组件。</p>\n<pre><code class="language-js">export default {\n  name: &#39;item&#39;, // 必填选项\n  props: [&#39;item&#39;],\n  serverCacheKey: props =&gt; props.item.id,\n  render (h) {\n    return h(&#39;div&#39;, this.item.id)\n  }\n}</code></pre>\n<p>请注意，可缓存组件<strong>还必须定义一个唯一的 <code>name</code> 选项</strong>。通过使用唯一的名称，每个缓存键 (cache key) 对应一个组件：你无需担心两个组件返回同一个 key。</p>\n<p><code>serverCacheKey</code> 返回的 key 应该包含足够的信息，来表示渲染结果的具体情况。如果渲染结果仅由 <code>props.item.id</code> 决定，则上述是一个很好的实现。但是，如果具有相同 id 的 item 可能会随时间而变化，或者如果渲染结果依赖于其他 prop，则需要修改 <code>serverCacheKey</code> 的实现，以考虑其他变量。</p>\n<p>返回常量将导致组件始终被缓存，这对纯静态组件是有好处的。</p>\n<h3 id="何时使用组件缓存">何时使用组件缓存</h3>\n<p>如果 renderer 在组件渲染过程中进行缓存命中，那么它将直接重新使用整个子树的缓存结果。这意味着在以下情况，你<strong>不</strong>应该缓存组件：</p>\n<ul>\n<li>它具有可能依赖于全局状态的子组件。</li>\n<li>它具有对渲染<code>上下文</code>产生副作用(side effect)的子组件。</li>\n</ul>\n<p>因此，应该小心使用组件缓存来解决性能瓶颈。在大多数情况下，你不应该也不需要缓存单一实例组件。适用于缓存的最常见类型的组件，是在大的 <code>v-for</code> 列表中重复出现的组件。由于这些组件通常由数据库集合(database collection)中的对象驱动，它们可以使用简单的缓存策略：使用其唯一 id，再加上最后更新的时间戳，来生成其缓存键(cache key)：</p>\n<pre><code class="language-js">serverCacheKey: props =&gt; props.item.id + &#39;::&#39; + props.item.last_updated</code></pre>\n'}],error:null,serverRendered:!0}</script><script src="/_nuxt/5b903e67bf481398d707.js" defer></script><script src="/_nuxt/2f480862b771e7e31847.js" defer></script><script src="/_nuxt/908266514fa462135bf0.js" defer></script><script src="/_nuxt/5503a04a5d2f36b0d6f4.js" defer></script>
+  </body>
+</html>

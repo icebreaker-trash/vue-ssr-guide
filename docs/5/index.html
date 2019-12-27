@@ -1,0 +1,52 @@
+<!doctype html>
+<html data-n-head-ssr>
+  <head>
+    <link rel="preload" href="/_nuxt/5b903e67bf481398d707.js" as="script"><link rel="preload" href="/_nuxt/908266514fa462135bf0.js" as="script"><link rel="preload" href="/_nuxt/5503a04a5d2f36b0d6f4.js" as="script"><link rel="preload" href="/_nuxt/2f480862b771e7e31847.js" as="script"><style data-vue-ssr-id="57312d8d:0 250be73c:0 70ec8e52:0">.nuxt-progress{position:fixed;top:0;left:0;right:0;height:2px;width:0;opacity:1;-webkit-transition:width .1s,opacity .4s;transition:width .1s,opacity .4s;background-color:#000;z-index:999999}.nuxt-progress.nuxt-progress-notransition{-webkit-transition:none;transition:none}.nuxt-progress-failed{background-color:red}.doc-container[data-v-6ef68715]{padding-bottom:50px}.controls[data-v-9a4e02f8]{position:fixed;bottom:0;left:0;right:0;color:grey;opacity:.8}.controls .btn[data-v-9a4e02f8]{height:48px}.controls .btn.prev[data-v-9a4e02f8]{width:38%}.controls .btn.next[data-v-9a4e02f8]{width:61%}</style>
+  </head>
+  <body>
+    <div data-server-rendered="true" id="__nuxt"><!----><div id="__layout"><section class="doc-container" data-v-6ef68715><div data-v-6ef68715><h1 id="bundle-renderer-指引">Bundle Renderer 指引</h1>
+<h2 id="使用基本-ssr-的问题">使用基本 SSR 的问题</h2>
+<p>到目前为止，我们假设打包的服务器端代码，将由服务器通过 <code>require</code> 直接使用：</p>
+<pre><code class="language-js">const createApp = require('/path/to/built-server-bundle.js')</code></pre>
+<p>这是理所应当的，然而在每次编辑过应用程序源代码之后，都必须停止并重启服务。这在开发过程中会影响开发效率。此外，Node.js 本身不支持 source map。</p>
+<h2 id="传入-bundlerenderer">传入 BundleRenderer</h2>
+<p><code>vue-server-renderer</code> 提供一个名为 <code>createBundleRenderer</code> 的 API，用于处理此问题，通过使用 webpack 的自定义插件，server bundle 将生成为可传递到 bundle renderer 的特殊 JSON 文件。所创建的 bundle renderer，用法和普通 renderer 相同，但是 bundle renderer 提供以下优点：</p>
+<ul>
+<li><p>内置的 source map 支持（在 webpack 配置中使用 <code>devtool: 'source-map'</code>）</p>
+</li>
+<li><p>在开发环境甚至部署过程中热重载（通过读取更新后的 bundle，然后重新创建 renderer 实例）</p>
+</li>
+<li><p>关键 CSS(critical CSS) 注入（在使用 <code>*.vue</code> 文件时）：自动内联在渲染过程中用到的组件所需的CSS。更多细节请查看 <a href="./css.md">CSS</a> 章节。</p>
+</li>
+<li><p>使用 <a href="../api/#clientmanifest">clientManifest</a> 进行资源注入：自动推断出最佳的预加载(preload)和预取(prefetch)指令，以及初始渲染所需的代码分割 chunk。</p>
+</li>
+</ul>
+<hr>
+<p>在下一章节中，我们将讨论如何配置 webpack，以生成 bundle renderer 所需的构建工件 (build artifact)，但现在假设我们已经有了这些需要的构建工件，以下就是创建和使用 bundle renderer 的方法：</p>
+<pre><code class="language-js">const { createBundleRenderer } = require('vue-server-renderer')
+
+const renderer = createBundleRenderer(serverBundle, {
+  runInNewContext: false, // 推荐
+  template, // （可选）页面模板
+  clientManifest // （可选）客户端构建 manifest
+})
+
+// 在服务器处理函数中……
+server.get('*', (req, res) => {
+  const context = { url: req.url }
+  // 这里无需传入一个应用程序，因为在执行 bundle 时已经自动创建过。
+  // 现在我们的服务器与应用程序已经解耦！
+  renderer.renderToString(context, (err, html) => {
+    // 处理异常……
+    res.end(html)
+  })
+})</code></pre>
+<p>bundle renderer 在调用 <code>renderToString</code> 时，它将自动执行「由 bundle 创建的应用程序实例」所导出的函数（传入<code>上下文</code>作为参数），然后渲染它。</p>
+<p>注意，推荐将 <code>runInNewContext</code> 选项设置为 <code>false</code> 或 <code>'once'</code>。更多细节请查看 <a href="../api/#runinnewcontext">API 参考</a>。</p>
+</div> <div class="controls" data-v-9a4e02f8 data-v-6ef68715><a href="/4" data-v-9a4e02f8><button class="btn prev" data-v-9a4e02f8>
+      上一页
+    </button></a> <a href="/6" data-v-9a4e02f8><button class="btn next" data-v-9a4e02f8>
+      下一页
+    </button></a></div></section></div></div><script>window.__NUXT__={layout:"default",data:[{sourceIndex:4,sourceLength:15,source:'<h1 id="bundle-renderer-指引">Bundle Renderer 指引</h1>\n<h2 id="使用基本-ssr-的问题">使用基本 SSR 的问题</h2>\n<p>到目前为止，我们假设打包的服务器端代码，将由服务器通过 <code>require</code> 直接使用：</p>\n<pre><code class="language-js">const createApp = require(&#39;/path/to/built-server-bundle.js&#39;)</code></pre>\n<p>这是理所应当的，然而在每次编辑过应用程序源代码之后，都必须停止并重启服务。这在开发过程中会影响开发效率。此外，Node.js 本身不支持 source map。</p>\n<h2 id="传入-bundlerenderer">传入 BundleRenderer</h2>\n<p><code>vue-server-renderer</code> 提供一个名为 <code>createBundleRenderer</code> 的 API，用于处理此问题，通过使用 webpack 的自定义插件，server bundle 将生成为可传递到 bundle renderer 的特殊 JSON 文件。所创建的 bundle renderer，用法和普通 renderer 相同，但是 bundle renderer 提供以下优点：</p>\n<ul>\n<li><p>内置的 source map 支持（在 webpack 配置中使用 <code>devtool: &#39;source-map&#39;</code>）</p>\n</li>\n<li><p>在开发环境甚至部署过程中热重载（通过读取更新后的 bundle，然后重新创建 renderer 实例）</p>\n</li>\n<li><p>关键 CSS(critical CSS) 注入（在使用 <code>*.vue</code> 文件时）：自动内联在渲染过程中用到的组件所需的CSS。更多细节请查看 <a href="./css.md">CSS</a> 章节。</p>\n</li>\n<li><p>使用 <a href="../api/#clientmanifest">clientManifest</a> 进行资源注入：自动推断出最佳的预加载(preload)和预取(prefetch)指令，以及初始渲染所需的代码分割 chunk。</p>\n</li>\n</ul>\n<hr>\n<p>在下一章节中，我们将讨论如何配置 webpack，以生成 bundle renderer 所需的构建工件 (build artifact)，但现在假设我们已经有了这些需要的构建工件，以下就是创建和使用 bundle renderer 的方法：</p>\n<pre><code class="language-js">const { createBundleRenderer } = require(&#39;vue-server-renderer&#39;)\n\nconst renderer = createBundleRenderer(serverBundle, {\n  runInNewContext: false, // 推荐\n  template, // （可选）页面模板\n  clientManifest // （可选）客户端构建 manifest\n})\n\n// 在服务器处理函数中……\nserver.get(&#39;*&#39;, (req, res) =&gt; {\n  const context = { url: req.url }\n  // 这里无需传入一个应用程序，因为在执行 bundle 时已经自动创建过。\n  // 现在我们的服务器与应用程序已经解耦！\n  renderer.renderToString(context, (err, html) =&gt; {\n    // 处理异常……\n    res.end(html)\n  })\n})</code></pre>\n<p>bundle renderer 在调用 <code>renderToString</code> 时，它将自动执行「由 bundle 创建的应用程序实例」所导出的函数（传入<code>上下文</code>作为参数），然后渲染它。</p>\n<p>注意，推荐将 <code>runInNewContext</code> 选项设置为 <code>false</code> 或 <code>&#39;once&#39;</code>。更多细节请查看 <a href="../api/#runinnewcontext">API 参考</a>。</p>\n'}],error:null,serverRendered:!0}</script><script src="/_nuxt/5b903e67bf481398d707.js" defer></script><script src="/_nuxt/2f480862b771e7e31847.js" defer></script><script src="/_nuxt/908266514fa462135bf0.js" defer></script><script src="/_nuxt/5503a04a5d2f36b0d6f4.js" defer></script>
+  </body>
+</html>

@@ -1,3 +1,5 @@
+const requireContext = require("./utils/server/require-context")
+
 module.exports = {
   /*
    ** Build configuration
@@ -30,14 +32,19 @@ module.exports = {
           }
         ]
       })
-    },
-    babel: {
-      babelrc: false,
-      cacheDirectory: undefined,
-      presets: ["@nuxt/babel-preset-app"]
     }
   },
   generate: {
-    dir: "../docs"
+    dir: "../docs",
+    //https://nuxtjs.org/guide/routing#dynamic-routes
+    //Dynamic routes are ignored by the generate command (yarn generate). Nuxt does not know what these routes will be so it can't generate them.
+    routes: (() => {
+      const req = requireContext("./", "./dataSource/mds", true, /\.md$/)
+      const routes = []
+      for (let i = 0; i < req.keys().length; i++) {
+        routes.push(`/${i + 1}`)
+      }
+      return routes
+    })()
   }
 }

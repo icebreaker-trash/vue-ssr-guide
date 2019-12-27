@@ -1,6 +1,15 @@
 const requireContext = require("./utils/server/require-context")
-
+const pkg = require("../package.json")
+const routerBase =
+  process.env.DEPLOY_ENV === "GH_PAGES"
+    ? {
+        router: {
+          base: pkg.name
+        }
+      }
+    : {}
 module.exports = {
+  ...routerBase,
   /*
    ** Build configuration
    */

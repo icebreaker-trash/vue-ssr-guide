@@ -36,5 +36,8 @@ module.exports = {
       cacheDirectory: undefined,
       presets: ["@nuxt/babel-preset-app"]
     }
+  },
+  generate: {
+    dir: "../docs"
   }
 }

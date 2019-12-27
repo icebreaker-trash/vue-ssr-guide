@@ -1,11 +1,12 @@
 <template>
-  <section>
-    <div>{{ sourceIndex }}</div>
-    <div>{{ source }}</div>
+  <section class="doc-container">
+    <div v-html="source" />
+    <pager :current-page="sourceIndex + 1" :total="sourceLength" />
   </section>
 </template>
 
 <script>
+import Pager from "@/components/Pager"
 import serviceDataSource from "@/dataSource/doc"
 const defalutSource = {
   sourceIndex: 0,
@@ -13,6 +14,10 @@ const defalutSource = {
 }
 export default {
   name: "Chapter",
+  components: {
+    Pager
+  },
+  directives: {},
   asyncData(context) {
     const { chapter } = context.route.params
     const num = parseInt(chapter)
@@ -20,9 +25,16 @@ export default {
       context.error({ statusCode: 404, message: "Page not Found" })
       return defalutSource
     }
-    return { sourceIndex: num - 1, source: serviceDataSource[num - 1] }
+    return {
+      sourceIndex: num - 1,
+      sourceLength: serviceDataSource.length,
+      source: serviceDataSource[num - 1]
+    }
   }
 }
 </script>
-
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.doc-container {
+  padding-bottom: 50px;
+}
+</style>

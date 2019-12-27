@@ -16,6 +16,25 @@ module.exports = {
           exclude: /(node_modules)/
         })
       }
+      config.module.rules.push({
+        test: /\.md$/,
+        use: [
+          {
+            loader: "html-loader"
+          },
+          {
+            loader: "markdown-loader",
+            options: {
+              /* your options here */
+            }
+          }
+        ]
+      })
+    },
+    babel: {
+      babelrc: false,
+      cacheDirectory: undefined,
+      presets: ["@nuxt/babel-preset-app"]
     }
   }
 }

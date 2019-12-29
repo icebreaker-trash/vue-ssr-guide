@@ -31,8 +31,8 @@ export const include = fillPath([
 ])
 export const exclude = fillPath(["/zh/api/"])
 
-export let orderBy = 1
 /**
+ *
  * @param {Array<string>} keys
  */
 export default keys => {

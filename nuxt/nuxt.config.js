@@ -4,11 +4,49 @@ const routerBase =
   process.env.DEPLOY_ENV === "GH_PAGES"
     ? {
         router: {
-          base: pkg.name
+          base: `/${pkg.name}/`
         }
       }
     : {}
 module.exports = {
+  mode: "universal",
+  modern: process.env.NODE_ENV === "production",
+  head: {
+    title: "Vue SSR Guide and Practice",
+    meta: [
+      {
+        charset: "utf-8"
+      },
+      {
+        "http-equiv": "X-UA-Compatible",
+        content: "IE=edge, chrome=1"
+      },
+      {
+        hid: "description",
+        name: "description",
+        content: "Vue SSR Guide and Practice"
+      },
+      {
+        hid: "viewport",
+        name: "viewport",
+        content:
+          "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui"
+      }
+    ],
+    link: [
+      {
+        rel: "icon",
+        type: "image/x-icon",
+        href: "/favicon.ico"
+      }
+    ],
+    script: [],
+    noscript: [
+      {
+        innerHTML: "The page need javascript"
+      }
+    ]
+  },
   ...routerBase,
   /*
    ** Build configuration

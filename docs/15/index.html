@@ -1,34 +1,192 @@
 <!doctype html>
 <html data-n-head-ssr>
   <head>
-    <base href="vue-ssr-guide/"><link rel="preload" href="vue-ssr-guide/_nuxt/8b7de927ba9d9ac0b119.js" as="script"><link rel="preload" href="vue-ssr-guide/_nuxt/354454f25a7bbd2f5077.js" as="script"><link rel="preload" href="vue-ssr-guide/_nuxt/8e612fe6c6780c0af74e.js" as="script"><link rel="preload" href="vue-ssr-guide/_nuxt/c78c938025b2e3070807.js" as="script"><style data-vue-ssr-id="57312d8d:0 250be73c:0 70ec8e52:0">.nuxt-progress{position:fixed;top:0;left:0;right:0;height:2px;width:0;opacity:1;-webkit-transition:width .1s,opacity .4s;transition:width .1s,opacity .4s;background-color:#000;z-index:999999}.nuxt-progress.nuxt-progress-notransition{-webkit-transition:none;transition:none}.nuxt-progress-failed{background-color:red}.doc-container[data-v-6ef68715]{padding-bottom:50px}.controls[data-v-9a4e02f8]{position:fixed;bottom:0;left:0;right:0;color:grey;opacity:.8}.controls .btn[data-v-9a4e02f8]{height:48px}.controls .btn.prev[data-v-9a4e02f8]{width:38%}.controls .btn.next[data-v-9a4e02f8]{width:61%}</style>
+    <base href="vue-ssr-guide/"><link rel="preload" href="vue-ssr-guide/_nuxt/92e4c0ac16292ded57f6.js" as="script"><link rel="preload" href="vue-ssr-guide/_nuxt/ec8fdd6f260143bf019e.js" as="script"><link rel="preload" href="vue-ssr-guide/_nuxt/811f0214fbd04c457568.js" as="script"><link rel="preload" href="vue-ssr-guide/_nuxt/d75a3582b46cbdf4c7b8.js" as="script"><style data-vue-ssr-id="57312d8d:0 47bbb88e:0 70ec8e52:0">.nuxt-progress{position:fixed;top:0;left:0;right:0;height:2px;width:0;opacity:1;-webkit-transition:width .1s,opacity .4s;transition:width .1s,opacity .4s;background-color:#000;z-index:999999}.nuxt-progress.nuxt-progress-notransition{-webkit-transition:none;transition:none}.nuxt-progress-failed{background-color:red}.doc-container[data-v-b2512a50]{padding-bottom:50px}.controls[data-v-9a4e02f8]{position:fixed;bottom:0;left:0;right:0;color:grey;opacity:.8}.controls .btn[data-v-9a4e02f8]{height:48px}.controls .btn.prev[data-v-9a4e02f8]{width:38%}.controls .btn.next[data-v-9a4e02f8]{width:61%}</style>
   </head>
   <body>
-    <div data-server-rendered="true" id="__nuxt"><!----><div id="__layout"><section class="doc-container" data-v-6ef68715><div data-v-6ef68715><h1 id="编写通用代码">编写通用代码</h1>
-<p>在进一步介绍之前，让我们花点时间来讨论编写"通用"代码时的约束条件 - 即运行在服务器和客户端的代码。由于用例和平台 API 的差异，当运行在不同环境中时，我们的代码将不会完全相同。所以这里我们将会阐述你需要理解的关键事项。</p>
-<h2 id="服务器上的数据响应">服务器上的数据响应</h2>
-<p>在纯客户端应用程序 (client-only app) 中，每个用户会在他们各自的浏览器中使用新的应用程序实例。对于服务器端渲染，我们也希望如此：每个请求应该都是全新的、独立的应用程序实例，以便不会有交叉请求造成的状态污染 (cross-request state pollution)。</p>
-<p>因为实际的渲染过程需要确定性，所以我们也将在服务器上“预取”数据 ("pre-fetching" data) - 这意味着在我们开始渲染时，我们的应用程序就已经解析完成其状态。也就是说，将数据进行响应式的过程在服务器上是多余的，所以默认情况下禁用。禁用响应式数据，还可以避免将「数据」转换为「响应式对象」的性能开销。</p>
-<h2 id="组件生命周期钩子函数">组件生命周期钩子函数</h2>
-<p>由于没有动态更新，所有的生命周期钩子函数中，只有 <code>beforeCreate</code> 和 <code>created</code> 会在服务器端渲染 (SSR) 过程中被调用。这就是说任何其他生命周期钩子函数中的代码（例如 <code>beforeMount</code> 或 <code>mounted</code>），只会在客户端执行。</p>
-<p>此外还需要注意的是，你应该避免在 <code>beforeCreate</code> 和 <code>created</code> 生命周期时产生全局副作用的代码，例如在其中使用 <code>setInterval</code> 设置 timer。在纯客户端 (client-side only) 的代码中，我们可以设置一个 timer，然后在 <code>beforeDestroy</code> 或 <code>destroyed</code> 生命周期时将其销毁。但是，由于在 SSR 期间并不会调用销毁钩子函数，所以 timer 将永远保留下来。为了避免这种情况，请将副作用代码移动到 <code>beforeMount</code> 或 <code>mounted</code> 生命周期中。</p>
-<h2 id="访问特定平台platform-specific-api">访问特定平台(Platform-Specific) API</h2>
-<p>通用代码不可接受特定平台的 API，因此如果你的代码中，直接使用了像 <code>window</code> 或 <code>document</code>，这种仅浏览器可用的全局变量，则会在 Node.js 中执行时抛出错误，反之也是如此。</p>
-<p>对于共享于服务器和客户端，但用于不同平台 API 的任务(task)，建议将平台特定实现包含在通用 API 中，或者使用为你执行此操作的 library。例如，<a href="https://github.com/axios/axios">axios</a> 是一个 HTTP 客户端，可以向服务器和客户端都暴露相同的 API。</p>
-<p>对于仅浏览器可用的 API，通常方式是，在「纯客户端 (client-only)」的生命周期钩子函数中惰性访问 (lazily access) 它们。</p>
-<p>请注意，考虑到如果第三方 library 不是以上面的通用用法编写，则将其集成到服务器渲染的应用程序中，可能会很棘手。你<em>可能</em>要通过模拟 (mock) 一些全局变量来使其正常运行，但这只是 hack 的做法，并且可能会干扰到其他 library 的环境检测代码。</p>
-<h2 id="自定义指令">自定义指令</h2>
-<p>大多数自定义指令直接操作 DOM，因此会在服务器端渲染 (SSR) 过程中导致错误。有两种方法可以解决这个问题：</p>
+    <div data-server-rendered="true" id="__nuxt"><!----><div id="__layout"><section class="doc-container" data-v-b2512a50><div data-v-b2512a50><hr>
+<h2 id="sidebar-auto">sidebar: auto</h2>
+<h1 id="api-参考">API 参考</h1>
+<h2 id="createrenderer">createRenderer</h2>
+<p>使用（可选的）<a href="#renderer-options">选项</a>创建一个 <a href="#class-renderer"><code>Renderer</code></a> 实例。</p>
+<pre><code class="language-js">const { createRenderer } = require('vue-server-renderer')
+const renderer = createRenderer({ /* 选项 */ })</code></pre>
+<h2 id="createbundlerenderer">createBundleRenderer</h2>
+<p>使用 server bundle 和（可选的）<a href="#renderer-options">选项</a>创建一个 <a href="#class-bundlerenderer"><code>BundleRenderer</code></a> 实例。</p>
+<pre><code class="language-js">const { createBundleRenderer } = require('vue-server-renderer')
+const renderer = createBundleRenderer(serverBundle, { /* 选项 */ })</code></pre>
+<p><code>serverBundle</code> 参数可以是以下之一：</p>
+<ul>
+<li><p>绝对路径，指向一个已经构建好的 bundle 文件（<code>.js</code> 或 <code>.json</code>）。必须以 <code>/</code> 开头才会被识别为文件路径。</p>
+</li>
+<li><p>由 webpack + <code>vue-server-renderer/server-plugin</code> 生成的 bundle 对象。</p>
+</li>
+<li><p>JavaScript 代码字符串（不推荐）。</p>
+</li>
+</ul>
+<p>更多细节请查看 <a href="../guide/bundle-renderer.md">Server Bundle 指引</a> 和 <a href="../guide/build-config.md">构建配置</a>。</p>
+<h2 id="class-renderer">Class: Renderer</h2>
+<h3 id="rendererrendertostring">renderer.renderToString</h3>
+<p>函数签名:</p>
+<pre><code class="language-js">renderer.renderToString(vm, context?, callback?): ?Promise&lt;string></code></pre>
+<p>将 Vue 实例渲染为字符串。上下文对象 (context object) 可选。回调函数是典型的 Node.js 风格回调，其中第一个参数是可能抛出的错误，第二个参数是渲染完毕的字符串。</p>
+<p>在 2.5.0+ 版本中，此 callback 回调函数是可选项。在不传递 callback 时，此方法返回一个 Promise 对象，在其  resolve 后返回最终渲染的 HTML。</p>
+<h3 id="rendererrendertostream">renderer.renderToStream</h3>
+<p>函数签名:</p>
+<pre><code class="language-js">renderer.renderToStream(vm[, context]): stream.Readable</code></pre>
+<p>将 Vue 实例渲染为一个 <a href="https://nodejs.org/dist/latest-v8.x/docs/api/stream.html#stream_readable_streams">Node.js 可读流</a>。上下文对象 (context object) 可选。更多细节请查看<a href="../guide/streaming.md">流式渲染</a>。</p>
+<h2 id="class-bundlerenderer">Class: BundleRenderer</h2>
+<h3 id="bundlerendererrendertostring">bundleRenderer.renderToString</h3>
+<p>函数签名:</p>
+<pre><code class="language-js">bundleRenderer.renderToString([context, callback]): ?Promise&lt;string></code></pre>
+<p>将 bundle 渲染为字符串。上下文对象 (context object) 可选。回调是一个典型的 Node.js 风格回调，其中第一个参数是可能抛出的错误，第二个参数是渲染完毕的字符串。</p>
+<p>在 2.5.0+ 版本中，此 callback 回调函数是可选项。在不传递 callback 时，此方法返回一个 Promise 对象，在其  resolve 后返回最终渲染的 HTML。</p>
+<h3 id="bundlerendererrendertostream">bundleRenderer.renderToStream</h3>
+<p>函数签名:</p>
+<pre><code class="language-js">bundleRenderer.renderToStream([context]): stream.Readable</code></pre>
+<p>将 bundle 渲染为一个 <a href="https://nodejs.org/dist/latest-v8.x/docs/api/stream.html#stream_readable_streams">Node.js 可读流</a>。上下文对象 (context object) 可选。更多细节请查看<a href="../guide/streaming.md">流式渲染</a>。</p>
+<h2 id="renderer-选项">Renderer 选项</h2>
+<h3 id="template">template</h3>
+<p>为整个页面的 HTML 提供一个模板。此模板应包含注释 <code>&lt;!--vue-ssr-outlet--></code>，作为渲染应用程序内容的占位符。</p>
+<p>模板还支持使用渲染上下文 (render context) 进行基本插值：</p>
+<ul>
+<li>使用双花括号 (double-mustache) 进行 HTML 转义插值 (HTML-escaped interpolation)；</li>
+<li>使用三花括号 (triple-mustache) 进行 HTML 不转义插值 (non-HTML-escaped interpolation)。</li>
+</ul>
+<p>当在渲染上下文 (render context) 上存在一些特定属性时，模板会自动注入对应的内容：</p>
+<ul>
+<li><p><code>context.head</code>：（字符串）将会被作为 HTML 注入到页面的头部 (head) 里。</p>
+</li>
+<li><p><code>context.styles</code>：（字符串）内联 CSS，将以 style 标签的形式注入到页面头部。注意，如过你使用了 <code>vue-loader</code> + <code>vue-style-loader</code> 来处理组件 CSS，此属性会在构建过程中被自动生成。</p>
+</li>
+<li><p><code>context.state</code>：（对象）初始 Vuex store 状态，将以 <code>window.__INITIAL_STATE__</code> 的形式内联到页面。内联的 JSON 将使用 <a href="https://github.com/yahoo/serialize-javascript">serialize-javascript</a>  自动清理，以防止 XSS 攻击。</p>
+<p>在 2.5.0+ 版本中，嵌入式 script 也可以也可以在生产模式 (production mode) 下自行移除。</p>
+</li>
+</ul>
+<p>此外，当提供 <code>clientManifest</code> 时，模板会自动注入以下内容：</p>
+<ul>
+<li>渲染当前页面所需的最优客户端 JavaScript 和 CSS 资源（支持自动推导异步代码分割所需的文件）；</li>
+<li>为要渲染页面提供最佳的 <code>&lt;link rel="preload/prefetch"></code> 资源提示 (resource hints)。</li>
+</ul>
+<p>你也可以通过将 <code>inject: false</code> 传递给 renderer，来禁用所有自动注入。</p>
+<p>具体查看：</p>
+<ul>
+<li><a href="../guide/#using-a-page-template">使用一个页面模板</a></li>
+<li><a href="../guide/build-config.md#manual-asset-injection">手动资源注入(Manual Asset Injection)</a></li>
+</ul>
+<h3 id="clientmanifest">clientManifest</h3>
+<p>通过此选项提供一个由 <code>vue-server-renderer/client-plugin</code> 生成的客户端构建 manifest 对象(client build manifest object)。此对象包含了 webpack 整个构建过程的信息，从而可以让 bundle renderer 自动推导需要在 HTML 模板中注入的内容。更多详细信息，请查看<a href="../guide/build-config.md#generating-clientmanifest">生成 clientManifest</a>。</p>
+<h3 id="inject">inject</h3>
+<p>控制使用 <code>template</code> 时是否执行自动注入。默认是 <code>true</code>。</p>
+<p>参考：<a href="../guide/build-config.md#manual-asset-injection">手动资源注入(Manual Asset Injection)</a>。</p>
+<h3 id="shouldpreload">shouldPreload</h3>
+<p>一个函数，用来控制什么文件应该生成 <code>&lt;link rel="preload"></code> 资源预加载提示 (resource hints)。</p>
+<p>默认情况下，只有 JavaScript 和 CSS 文件会被预加载，因为它们是启动应用时所必需的。</p>
+<p>对于其他类型的资源（如图像或字体），预加载过多可能会浪费带宽，甚至损害性能，因此预加载什么资源具体依赖于场景。你可以使用 <code>shouldPreload</code> 选项精确控制预加载资源：</p>
+<pre><code class="language-js">const renderer = createBundleRenderer(bundle, {
+  template,
+  clientManifest,
+  shouldPreload: (file, type) => {
+    // 基于文件扩展名的类型推断。
+    // https://fetch.spec.whatwg.org/#concept-request-destination
+    if (type === 'script' || type === 'style') {
+      return true
+    }
+    if (type === 'font') {
+      // 只预加载 woff2 字体
+      return /\.woff2$/.test(file)
+    }
+    if (type === 'image') {
+      // 只预加载重要 images
+      return file === 'hero.jpg'
+    }
+  }
+})</code></pre>
+<h3 id="shouldprefetch">shouldPrefetch</h3>
+<ul>
+<li>2.5.0+</li>
+</ul>
+<p>一个函数，用来控制对于哪些文件，是需要生成 <code>&lt;link rel="prefetch"></code> 资源提示。</p>
+<p>默认情况下，异步 chunk 中的所有资源都将被预取，因为这是低优先级指令; 然而，为了更好地控制带宽使用情况，你也可以自定义要预取的资源。此选项具有与 <code>shouldPreload</code> 相同的函数签名。</p>
+<h3 id="runinnewcontext">runInNewContext</h3>
+<ul>
+<li>只用于 <code>createBundleRenderer</code></li>
+<li>期望值：<code>boolean | 'once'</code>（<code>'once'</code> 只在 2.3.1+ 支持）</li>
+</ul>
+<p>默认情况下，对于每次渲染，bundle renderer 将创建一个新的 V8 上下文并重新执行整个 bundle。这具有一些好处 - 例如，应用程序代码与服务器进程隔离，我们无需担心文档中提到的<a href="../guide/structure.md#avoid-stateful-singletons">状态单例问题</a>。然而，这种模式有一些相当大的性能开销，因为重新创建上下文并执行整个 bundle 还是相当昂贵的，特别是当应用很大的时候。</p>
+<p>出于向后兼容的考虑，此选项默认为 <code>true</code>，但建议你尽可能使用 <code>runInNewContext: false</code> 或 <code>runInNewContext: 'once'</code>。</p>
+<blockquote>
+<p>在 2.3.0 中，此选项有一个 bug，其中 <code>runInNewContext: false</code> 仍然使用独立的全局上下文 (separate global context) 执行 bundle。以下信息假定版本为 2.3.1+。</p>
+</blockquote>
+<p>使用 <code>runInNewContext: false</code>，bundle 代码将与服务器进程在同一个 <code>global</code> 上下文中运行，所以请留意在应用程序代码中尽量避免修改 <code>global</code>。</p>
+<p>使用 <code>runInNewContext: 'once'</code> (2.3.1+)，bundle 将在独立的<code>全局</code>上下文(separate global context)取值，然而只在启动时取值一次。这提供了一定程度的应用程序代码隔离，因为它能够防止 bundle 中的代码意外污染服务器进程的 <code>global</code> 对象。注意事项如下：</p>
 <ol>
-<li><p>推荐使用组件作为抽象机制，并运行在「虚拟 DOM 层级(Virtual-DOM level)」（例如，使用渲染函数(render function)）。</p>
-</li>
-<li><p>如果你有一个自定义指令，但是不是很容易替换为组件，则可以在创建服务器 renderer 时，使用 <a href="../api/#directives"><code>directives</code></a> 选项所提供"服务器端版本(server-side version)"。</p>
-</li>
+<li>在此模式下，修改 <code>global</code>（例如，polyfill）的依赖模块必须被打包进 bundle，不能被外部化 (externalize)；</li>
+<li>从 bundle 执行返回的值将使用不同的全局构造函数，例如，在服务器进程中捕获到 bundle 内部抛出的错误，使用的是 bundle 上下文中的 Error 构造函数，所以它不会是服务器进程中 <code>Error</code> 的一个实例。</li>
 </ol>
-</div> <div class="controls" data-v-9a4e02f8 data-v-6ef68715><a href="/vue-ssr-guide/14" data-v-9a4e02f8><button class="btn prev" data-v-9a4e02f8>
+<p>参考：<a href="../guide/structure.md">源码结构</a></p>
+<h3 id="basedir">basedir</h3>
+<ul>
+<li>只用于 <code>createBundleRenderer</code></li>
+</ul>
+<p>显式地声明 server bundle 的运行目录。运行时将会以此目录为基准来解析 <code>node_modules</code> 中的依赖模块。只有在所生成的 bundle 文件与外部的 NPM 依赖模块放置在不同位置，或者 <code>vue-server-renderer</code> 是通过 NPM link 链接到当前项目中时，才需要配置此选项。</p>
+<h3 id="cache">cache</h3>
+<p>提供<a href="../guide/caching.md#component-level-caching">组件缓存</a>具体实现。缓存对象必须实现以下接口（使用 Flow 语法表示）：</p>
+<pre><code class="language-js">type RenderCache = {
+  get: (key: string, cb?: Function) => string | void;
+  set: (key: string, val: string) => void;
+  has?: (key: string, cb?: Function) => boolean | void;
+};</code></pre>
+<p>典型用法是传入 <a href="https://github.com/isaacs/node-lru-cache">lru-cache</a>：</p>
+<pre><code class="language-js">const LRU = require('lru-cache')
+
+const renderer = createRenderer({
+  cache: LRU({
+    max: 10000
+  })
+})</code></pre>
+<p>请注意，缓存对象应至少要实现 <code>get</code> 和 <code>set</code>。此外，如果 <code>get</code> 和 <code>has</code> 接收第二个参数作为回调，那 <code>get</code> 和 <code>has</code> 也可以是可选的异步函数。这允许缓存使用异步 API，例如，一个 Redis 客户端：</p>
+<pre><code class="language-js">const renderer = createRenderer({
+  cache: {
+    get: (key, cb) => {
+      redisClient.get(key, (err, res) => {
+        // 处理任何错误
+        cb(res)
+      })
+    },
+    set: (key, val) => {
+      redisClient.set(key, val)
+    }
+  }
+})</code></pre>
+<h3 id="directives">directives</h3>
+<p>对于自定义指令，允许提供服务器端实现：</p>
+<pre><code class="language-js">const renderer = createRenderer({
+  directives: {
+    example (vnode, directiveMeta) {
+      // 基于指令绑定元数据(metadata)转换 vnode
+    }
+  }
+})</code></pre>
+<p>例如，请查看 <a href="https://github.com/vuejs/vue/blob/dev/src/platforms/web/server/directives/show.js"><code>v-show</code> 的服务器端实现</a>。</p>
+<h2 id="webpack-插件">webpack 插件</h2>
+<p>webpack 插件作为独立文件提供，并且应当直接 require：</p>
+<pre><code class="language-js">const VueSSRServerPlugin = require('vue-server-renderer/server-plugin')
+const VueSSRClientPlugin = require('vue-server-renderer/client-plugin')</code></pre>
+<p>生成的默认文件是：</p>
+<ul>
+<li><code>vue-ssr-server-bundle.json</code> 用于服务器端插件；</li>
+<li><code>vue-ssr-client-manifest.json</code> 用于客户端插件。</li>
+</ul>
+<p>创建插件实例时可以自定义文件名：</p>
+<pre><code class="language-js">const plugin = new VueSSRServerPlugin({
+  filename: 'my-server-bundle.json'
+})</code></pre>
+<p>更多信息请查看<a href="../guide/build-config.md">构建配置</a>。</p>
+</div> <div class="controls" data-v-9a4e02f8 data-v-b2512a50><a href="/vue-ssr-guide/14" data-v-9a4e02f8><button class="btn prev" data-v-9a4e02f8>
       上一页
     </button></a> <button disabled class="btn next" data-v-9a4e02f8>
     下一页
-  </button></div></section></div></div><script>window.__NUXT__={layout:"default",data:[{sourceIndex:14,sourceLength:15,source:'<h1 id="编写通用代码">编写通用代码</h1>\n<p>在进一步介绍之前，让我们花点时间来讨论编写&quot;通用&quot;代码时的约束条件 - 即运行在服务器和客户端的代码。由于用例和平台 API 的差异，当运行在不同环境中时，我们的代码将不会完全相同。所以这里我们将会阐述你需要理解的关键事项。</p>\n<h2 id="服务器上的数据响应">服务器上的数据响应</h2>\n<p>在纯客户端应用程序 (client-only app) 中，每个用户会在他们各自的浏览器中使用新的应用程序实例。对于服务器端渲染，我们也希望如此：每个请求应该都是全新的、独立的应用程序实例，以便不会有交叉请求造成的状态污染 (cross-request state pollution)。</p>\n<p>因为实际的渲染过程需要确定性，所以我们也将在服务器上“预取”数据 (&quot;pre-fetching&quot; data) - 这意味着在我们开始渲染时，我们的应用程序就已经解析完成其状态。也就是说，将数据进行响应式的过程在服务器上是多余的，所以默认情况下禁用。禁用响应式数据，还可以避免将「数据」转换为「响应式对象」的性能开销。</p>\n<h2 id="组件生命周期钩子函数">组件生命周期钩子函数</h2>\n<p>由于没有动态更新，所有的生命周期钩子函数中，只有 <code>beforeCreate</code> 和 <code>created</code> 会在服务器端渲染 (SSR) 过程中被调用。这就是说任何其他生命周期钩子函数中的代码（例如 <code>beforeMount</code> 或 <code>mounted</code>），只会在客户端执行。</p>\n<p>此外还需要注意的是，你应该避免在 <code>beforeCreate</code> 和 <code>created</code> 生命周期时产生全局副作用的代码，例如在其中使用 <code>setInterval</code> 设置 timer。在纯客户端 (client-side only) 的代码中，我们可以设置一个 timer，然后在 <code>beforeDestroy</code> 或 <code>destroyed</code> 生命周期时将其销毁。但是，由于在 SSR 期间并不会调用销毁钩子函数，所以 timer 将永远保留下来。为了避免这种情况，请将副作用代码移动到 <code>beforeMount</code> 或 <code>mounted</code> 生命周期中。</p>\n<h2 id="访问特定平台platform-specific-api">访问特定平台(Platform-Specific) API</h2>\n<p>通用代码不可接受特定平台的 API，因此如果你的代码中，直接使用了像 <code>window</code> 或 <code>document</code>，这种仅浏览器可用的全局变量，则会在 Node.js 中执行时抛出错误，反之也是如此。</p>\n<p>对于共享于服务器和客户端，但用于不同平台 API 的任务(task)，建议将平台特定实现包含在通用 API 中，或者使用为你执行此操作的 library。例如，<a href="https://github.com/axios/axios">axios</a> 是一个 HTTP 客户端，可以向服务器和客户端都暴露相同的 API。</p>\n<p>对于仅浏览器可用的 API，通常方式是，在「纯客户端 (client-only)」的生命周期钩子函数中惰性访问 (lazily access) 它们。</p>\n<p>请注意，考虑到如果第三方 library 不是以上面的通用用法编写，则将其集成到服务器渲染的应用程序中，可能会很棘手。你<em>可能</em>要通过模拟 (mock) 一些全局变量来使其正常运行，但这只是 hack 的做法，并且可能会干扰到其他 library 的环境检测代码。</p>\n<h2 id="自定义指令">自定义指令</h2>\n<p>大多数自定义指令直接操作 DOM，因此会在服务器端渲染 (SSR) 过程中导致错误。有两种方法可以解决这个问题：</p>\n<ol>\n<li><p>推荐使用组件作为抽象机制，并运行在「虚拟 DOM 层级(Virtual-DOM level)」（例如，使用渲染函数(render function)）。</p>\n</li>\n<li><p>如果你有一个自定义指令，但是不是很容易替换为组件，则可以在创建服务器 renderer 时，使用 <a href="../api/#directives"><code>directives</code></a> 选项所提供&quot;服务器端版本(server-side version)&quot;。</p>\n</li>\n</ol>\n'}],error:null,serverRendered:!0}</script><script src="vue-ssr-guide/_nuxt/8b7de927ba9d9ac0b119.js" defer></script><script src="vue-ssr-guide/_nuxt/c78c938025b2e3070807.js" defer></script><script src="vue-ssr-guide/_nuxt/354454f25a7bbd2f5077.js" defer></script><script src="vue-ssr-guide/_nuxt/8e612fe6c6780c0af74e.js" defer></script>
+  </button></div></section></div></div><script>window.__NUXT__={layout:"default",data:[{sourceIndex:14,sourceLength:15,source:'<hr>\n<h2 id="sidebar-auto">sidebar: auto</h2>\n<h1 id="api-参考">API 参考</h1>\n<h2 id="createrenderer">createRenderer</h2>\n<p>使用（可选的）<a href="#renderer-options">选项</a>创建一个 <a href="#class-renderer"><code>Renderer</code></a> 实例。</p>\n<pre><code class="language-js">const { createRenderer } = require(&#39;vue-server-renderer&#39;)\nconst renderer = createRenderer({ /* 选项 */ })</code></pre>\n<h2 id="createbundlerenderer">createBundleRenderer</h2>\n<p>使用 server bundle 和（可选的）<a href="#renderer-options">选项</a>创建一个 <a href="#class-bundlerenderer"><code>BundleRenderer</code></a> 实例。</p>\n<pre><code class="language-js">const { createBundleRenderer } = require(&#39;vue-server-renderer&#39;)\nconst renderer = createBundleRenderer(serverBundle, { /* 选项 */ })</code></pre>\n<p><code>serverBundle</code> 参数可以是以下之一：</p>\n<ul>\n<li><p>绝对路径，指向一个已经构建好的 bundle 文件（<code>.js</code> 或 <code>.json</code>）。必须以 <code>/</code> 开头才会被识别为文件路径。</p>\n</li>\n<li><p>由 webpack + <code>vue-server-renderer/server-plugin</code> 生成的 bundle 对象。</p>\n</li>\n<li><p>JavaScript 代码字符串（不推荐）。</p>\n</li>\n</ul>\n<p>更多细节请查看 <a href="../guide/bundle-renderer.md">Server Bundle 指引</a> 和 <a href="../guide/build-config.md">构建配置</a>。</p>\n<h2 id="class-renderer">Class: Renderer</h2>\n<h3 id="rendererrendertostring">renderer.renderToString</h3>\n<p>函数签名:</p>\n<pre><code class="language-js">renderer.renderToString(vm, context?, callback?): ?Promise&lt;string&gt;</code></pre>\n<p>将 Vue 实例渲染为字符串。上下文对象 (context object) 可选。回调函数是典型的 Node.js 风格回调，其中第一个参数是可能抛出的错误，第二个参数是渲染完毕的字符串。</p>\n<p>在 2.5.0+ 版本中，此 callback 回调函数是可选项。在不传递 callback 时，此方法返回一个 Promise 对象，在其  resolve 后返回最终渲染的 HTML。</p>\n<h3 id="rendererrendertostream">renderer.renderToStream</h3>\n<p>函数签名:</p>\n<pre><code class="language-js">renderer.renderToStream(vm[, context]): stream.Readable</code></pre>\n<p>将 Vue 实例渲染为一个 <a href="https://nodejs.org/dist/latest-v8.x/docs/api/stream.html#stream_readable_streams">Node.js 可读流</a>。上下文对象 (context object) 可选。更多细节请查看<a href="../guide/streaming.md">流式渲染</a>。</p>\n<h2 id="class-bundlerenderer">Class: BundleRenderer</h2>\n<h3 id="bundlerendererrendertostring">bundleRenderer.renderToString</h3>\n<p>函数签名:</p>\n<pre><code class="language-js">bundleRenderer.renderToString([context, callback]): ?Promise&lt;string&gt;</code></pre>\n<p>将 bundle 渲染为字符串。上下文对象 (context object) 可选。回调是一个典型的 Node.js 风格回调，其中第一个参数是可能抛出的错误，第二个参数是渲染完毕的字符串。</p>\n<p>在 2.5.0+ 版本中，此 callback 回调函数是可选项。在不传递 callback 时，此方法返回一个 Promise 对象，在其  resolve 后返回最终渲染的 HTML。</p>\n<h3 id="bundlerendererrendertostream">bundleRenderer.renderToStream</h3>\n<p>函数签名:</p>\n<pre><code class="language-js">bundleRenderer.renderToStream([context]): stream.Readable</code></pre>\n<p>将 bundle 渲染为一个 <a href="https://nodejs.org/dist/latest-v8.x/docs/api/stream.html#stream_readable_streams">Node.js 可读流</a>。上下文对象 (context object) 可选。更多细节请查看<a href="../guide/streaming.md">流式渲染</a>。</p>\n<h2 id="renderer-选项">Renderer 选项</h2>\n<h3 id="template">template</h3>\n<p>为整个页面的 HTML 提供一个模板。此模板应包含注释 <code>&lt;!--vue-ssr-outlet--&gt;</code>，作为渲染应用程序内容的占位符。</p>\n<p>模板还支持使用渲染上下文 (render context) 进行基本插值：</p>\n<ul>\n<li>使用双花括号 (double-mustache) 进行 HTML 转义插值 (HTML-escaped interpolation)；</li>\n<li>使用三花括号 (triple-mustache) 进行 HTML 不转义插值 (non-HTML-escaped interpolation)。</li>\n</ul>\n<p>当在渲染上下文 (render context) 上存在一些特定属性时，模板会自动注入对应的内容：</p>\n<ul>\n<li><p><code>context.head</code>：（字符串）将会被作为 HTML 注入到页面的头部 (head) 里。</p>\n</li>\n<li><p><code>context.styles</code>：（字符串）内联 CSS，将以 style 标签的形式注入到页面头部。注意，如过你使用了 <code>vue-loader</code> + <code>vue-style-loader</code> 来处理组件 CSS，此属性会在构建过程中被自动生成。</p>\n</li>\n<li><p><code>context.state</code>：（对象）初始 Vuex store 状态，将以 <code>window.__INITIAL_STATE__</code> 的形式内联到页面。内联的 JSON 将使用 <a href="https://github.com/yahoo/serialize-javascript">serialize-javascript</a>  自动清理，以防止 XSS 攻击。</p>\n<p>在 2.5.0+ 版本中，嵌入式 script 也可以也可以在生产模式 (production mode) 下自行移除。</p>\n</li>\n</ul>\n<p>此外，当提供 <code>clientManifest</code> 时，模板会自动注入以下内容：</p>\n<ul>\n<li>渲染当前页面所需的最优客户端 JavaScript 和 CSS 资源（支持自动推导异步代码分割所需的文件）；</li>\n<li>为要渲染页面提供最佳的 <code>&lt;link rel=&quot;preload/prefetch&quot;&gt;</code> 资源提示 (resource hints)。</li>\n</ul>\n<p>你也可以通过将 <code>inject: false</code> 传递给 renderer，来禁用所有自动注入。</p>\n<p>具体查看：</p>\n<ul>\n<li><a href="../guide/#using-a-page-template">使用一个页面模板</a></li>\n<li><a href="../guide/build-config.md#manual-asset-injection">手动资源注入(Manual Asset Injection)</a></li>\n</ul>\n<h3 id="clientmanifest">clientManifest</h3>\n<p>通过此选项提供一个由 <code>vue-server-renderer/client-plugin</code> 生成的客户端构建 manifest 对象(client build manifest object)。此对象包含了 webpack 整个构建过程的信息，从而可以让 bundle renderer 自动推导需要在 HTML 模板中注入的内容。更多详细信息，请查看<a href="../guide/build-config.md#generating-clientmanifest">生成 clientManifest</a>。</p>\n<h3 id="inject">inject</h3>\n<p>控制使用 <code>template</code> 时是否执行自动注入。默认是 <code>true</code>。</p>\n<p>参考：<a href="../guide/build-config.md#manual-asset-injection">手动资源注入(Manual Asset Injection)</a>。</p>\n<h3 id="shouldpreload">shouldPreload</h3>\n<p>一个函数，用来控制什么文件应该生成 <code>&lt;link rel=&quot;preload&quot;&gt;</code> 资源预加载提示 (resource hints)。</p>\n<p>默认情况下，只有 JavaScript 和 CSS 文件会被预加载，因为它们是启动应用时所必需的。</p>\n<p>对于其他类型的资源（如图像或字体），预加载过多可能会浪费带宽，甚至损害性能，因此预加载什么资源具体依赖于场景。你可以使用 <code>shouldPreload</code> 选项精确控制预加载资源：</p>\n<pre><code class="language-js">const renderer = createBundleRenderer(bundle, {\n  template,\n  clientManifest,\n  shouldPreload: (file, type) =&gt; {\n    // 基于文件扩展名的类型推断。\n    // https://fetch.spec.whatwg.org/#concept-request-destination\n    if (type === &#39;script&#39; || type === &#39;style&#39;) {\n      return true\n    }\n    if (type === &#39;font&#39;) {\n      // 只预加载 woff2 字体\n      return /\\.woff2$/.test(file)\n    }\n    if (type === &#39;image&#39;) {\n      // 只预加载重要 images\n      return file === &#39;hero.jpg&#39;\n    }\n  }\n})</code></pre>\n<h3 id="shouldprefetch">shouldPrefetch</h3>\n<ul>\n<li>2.5.0+</li>\n</ul>\n<p>一个函数，用来控制对于哪些文件，是需要生成 <code>&lt;link rel=&quot;prefetch&quot;&gt;</code> 资源提示。</p>\n<p>默认情况下，异步 chunk 中的所有资源都将被预取，因为这是低优先级指令; 然而，为了更好地控制带宽使用情况，你也可以自定义要预取的资源。此选项具有与 <code>shouldPreload</code> 相同的函数签名。</p>\n<h3 id="runinnewcontext">runInNewContext</h3>\n<ul>\n<li>只用于 <code>createBundleRenderer</code></li>\n<li>期望值：<code>boolean | &#39;once&#39;</code>（<code>&#39;once&#39;</code> 只在 2.3.1+ 支持）</li>\n</ul>\n<p>默认情况下，对于每次渲染，bundle renderer 将创建一个新的 V8 上下文并重新执行整个 bundle。这具有一些好处 - 例如，应用程序代码与服务器进程隔离，我们无需担心文档中提到的<a href="../guide/structure.md#avoid-stateful-singletons">状态单例问题</a>。然而，这种模式有一些相当大的性能开销，因为重新创建上下文并执行整个 bundle 还是相当昂贵的，特别是当应用很大的时候。</p>\n<p>出于向后兼容的考虑，此选项默认为 <code>true</code>，但建议你尽可能使用 <code>runInNewContext: false</code> 或 <code>runInNewContext: &#39;once&#39;</code>。</p>\n<blockquote>\n<p>在 2.3.0 中，此选项有一个 bug，其中 <code>runInNewContext: false</code> 仍然使用独立的全局上下文 (separate global context) 执行 bundle。以下信息假定版本为 2.3.1+。</p>\n</blockquote>\n<p>使用 <code>runInNewContext: false</code>，bundle 代码将与服务器进程在同一个 <code>global</code> 上下文中运行，所以请留意在应用程序代码中尽量避免修改 <code>global</code>。</p>\n<p>使用 <code>runInNewContext: &#39;once&#39;</code> (2.3.1+)，bundle 将在独立的<code>全局</code>上下文(separate global context)取值，然而只在启动时取值一次。这提供了一定程度的应用程序代码隔离，因为它能够防止 bundle 中的代码意外污染服务器进程的 <code>global</code> 对象。注意事项如下：</p>\n<ol>\n<li>在此模式下，修改 <code>global</code>（例如，polyfill）的依赖模块必须被打包进 bundle，不能被外部化 (externalize)；</li>\n<li>从 bundle 执行返回的值将使用不同的全局构造函数，例如，在服务器进程中捕获到 bundle 内部抛出的错误，使用的是 bundle 上下文中的 Error 构造函数，所以它不会是服务器进程中 <code>Error</code> 的一个实例。</li>\n</ol>\n<p>参考：<a href="../guide/structure.md">源码结构</a></p>\n<h3 id="basedir">basedir</h3>\n<ul>\n<li>只用于 <code>createBundleRenderer</code></li>\n</ul>\n<p>显式地声明 server bundle 的运行目录。运行时将会以此目录为基准来解析 <code>node_modules</code> 中的依赖模块。只有在所生成的 bundle 文件与外部的 NPM 依赖模块放置在不同位置，或者 <code>vue-server-renderer</code> 是通过 NPM link 链接到当前项目中时，才需要配置此选项。</p>\n<h3 id="cache">cache</h3>\n<p>提供<a href="../guide/caching.md#component-level-caching">组件缓存</a>具体实现。缓存对象必须实现以下接口（使用 Flow 语法表示）：</p>\n<pre><code class="language-js">type RenderCache = {\n  get: (key: string, cb?: Function) =&gt; string | void;\n  set: (key: string, val: string) =&gt; void;\n  has?: (key: string, cb?: Function) =&gt; boolean | void;\n};</code></pre>\n<p>典型用法是传入 <a href="https://github.com/isaacs/node-lru-cache">lru-cache</a>：</p>\n<pre><code class="language-js">const LRU = require(&#39;lru-cache&#39;)\n\nconst renderer = createRenderer({\n  cache: LRU({\n    max: 10000\n  })\n})</code></pre>\n<p>请注意，缓存对象应至少要实现 <code>get</code> 和 <code>set</code>。此外，如果 <code>get</code> 和 <code>has</code> 接收第二个参数作为回调，那 <code>get</code> 和 <code>has</code> 也可以是可选的异步函数。这允许缓存使用异步 API，例如，一个 Redis 客户端：</p>\n<pre><code class="language-js">const renderer = createRenderer({\n  cache: {\n    get: (key, cb) =&gt; {\n      redisClient.get(key, (err, res) =&gt; {\n        // 处理任何错误\n        cb(res)\n      })\n    },\n    set: (key, val) =&gt; {\n      redisClient.set(key, val)\n    }\n  }\n})</code></pre>\n<h3 id="directives">directives</h3>\n<p>对于自定义指令，允许提供服务器端实现：</p>\n<pre><code class="language-js">const renderer = createRenderer({\n  directives: {\n    example (vnode, directiveMeta) {\n      // 基于指令绑定元数据(metadata)转换 vnode\n    }\n  }\n})</code></pre>\n<p>例如，请查看 <a href="https://github.com/vuejs/vue/blob/dev/src/platforms/web/server/directives/show.js"><code>v-show</code> 的服务器端实现</a>。</p>\n<h2 id="webpack-插件">webpack 插件</h2>\n<p>webpack 插件作为独立文件提供，并且应当直接 require：</p>\n<pre><code class="language-js">const VueSSRServerPlugin = require(&#39;vue-server-renderer/server-plugin&#39;)\nconst VueSSRClientPlugin = require(&#39;vue-server-renderer/client-plugin&#39;)</code></pre>\n<p>生成的默认文件是：</p>\n<ul>\n<li><code>vue-ssr-server-bundle.json</code> 用于服务器端插件；</li>\n<li><code>vue-ssr-client-manifest.json</code> 用于客户端插件。</li>\n</ul>\n<p>创建插件实例时可以自定义文件名：</p>\n<pre><code class="language-js">const plugin = new VueSSRServerPlugin({\n  filename: &#39;my-server-bundle.json&#39;\n})</code></pre>\n<p>更多信息请查看<a href="../guide/build-config.md">构建配置</a>。</p>\n'}],error:null,serverRendered:!0}</script><script src="vue-ssr-guide/_nuxt/92e4c0ac16292ded57f6.js" defer></script><script src="vue-ssr-guide/_nuxt/d75a3582b46cbdf4c7b8.js" defer></script><script src="vue-ssr-guide/_nuxt/ec8fdd6f260143bf019e.js" defer></script><script src="vue-ssr-guide/_nuxt/811f0214fbd04c457568.js" defer></script>
   </body>
 </html>

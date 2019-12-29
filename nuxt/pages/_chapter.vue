@@ -6,6 +6,8 @@
 </template>
 
 <script>
+import "prismjs/themes/prism-tomorrow.css"
+import Prism from "prismjs"
 import Pager from "@/components/Pager"
 import serviceDataSource from "@/dataSource/doc"
 const defalutSource = {
@@ -17,7 +19,6 @@ export default {
   components: {
     Pager
   },
-  directives: {},
   asyncData(context) {
     const { chapter } = context.route.params
     const num = parseInt(chapter)
@@ -30,6 +31,9 @@ export default {
       sourceLength: serviceDataSource.length,
       source: serviceDataSource[num - 1]
     }
+  },
+  mounted() {
+    Prism.highlightAll()
   }
 }
 </script>

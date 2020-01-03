@@ -4,14 +4,27 @@
 	// 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
 	"version": "0.2.0",
 	"configurations": [
+  {
+    "type": "node",
+    "request": "launch",
+    "name": "tradition ssr",
+    "cwd": "${workspaceFolder}/tradition",
+    "program": "${workspaceFolder}/tradition/index.js",
+    "skipFiles": [
+      "<node_internals>/**"
+    ]
+  },
 		{
 			"type": "node",
 			"request": "launch",
-			"name": "启动程序",
+			"name": "nuxt",
 			"skipFiles": [
 				"<node_internals>/**"
 			],
-			"cwd": "${workspaceFolder}/nuxt",
+      "cwd": "${workspaceFolder}/nuxt",
+      "env": {
+        "DEBUG":"nuxt:*"
+      },
 			"program": "${workspaceFolder}\\nuxt/server/index.js"
 		}
 	]

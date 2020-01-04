@@ -1,5 +1,6 @@
 title: Vue服务端渲染的探索与实践
 speaker: icebreaker
+prismTheme: solarizedlight
 plugins:
     - echarts
 
@@ -247,3 +248,10 @@ renderer.renderRoute = async (route, context)=>{
 }
 
 ```
+
+<slide :class="size-60 ">
+
+![build-step](/build-step.png)
+
+<slide :class="size-60 ">
+

@@ -17,7 +17,6 @@ By icebreaker {.text-intro}
 
 随着前端技术的发展，前端开发的边界正逐渐被推向后端，两者的界限在重合与分离中不断交替。回首过往，Node.js在2009年的横空出世可以看作前端开发的里程碑事件，从此JavaScript不在局限于浏览器的狭窄空间，开始在服务器的广阔天空上展翅高飞。
 
-
 <slide :class="size-30 aligncenter">
 
 # 首先
@@ -44,6 +43,7 @@ By icebreaker {.text-intro}
 
 再后来出现了Vue等三大MVVM框架，网站做成了SPA应用，解决了很多问题的同时也带来了新问题，其中最突出的两个：难以SEO和首屏加载缓慢。
 <slide :class="size-40 aligncenter">
+
 ## 服务端渲染解决了什么?
 
 <slide :class="size-40 aligncenter">
@@ -72,7 +72,6 @@ SPA网站们不仅数据是动态生成的，连大部分DOM节点都是动态�
 
 <slide :class="size-40 ">
 
-
 1.技术成本，中间增加了这些环节当然要多更多的时间或更多的人来完成，并且还有不少坑要踩。
 
 2.很多计算从客户端移到服务器上，对服务器的压力增加，特别是高并发时会给服务器的 CPU 带来更大的负载。
@@ -83,7 +82,8 @@ SPA网站们不仅数据是动态生成的，连大部分DOM节点都是动态�
 
 <slide :class="size-40">
 
-从传统的Nodejs SSR解决方案，是利用pug，ejs,doT，或自定义的模板引擎，去编译服务端的模板，向其中填充数据后，向客户端返回html流，在用户进行页面跳转时，其行为类似于浏览器发送一个http请求访问并匹配某一个api，api返回text/html格式的数据，不论是jsp asp.net而言，都是这种思路。
+从传统的Nodejs SSR解决方案，是利用pug，ejs,doT，或自定义的模板引擎，去编译服务端的模板，向其中填充数据后，向客户端返回html流
+在用户进行页面跳转时，其行为类似于浏览器发送一个http请求访问并匹配某一个api，api返回text/html格式的数据，不论是jsp asp.net而言，都是这种思路。
 
 <slide :class="size-40">
 
@@ -108,7 +108,7 @@ Vue 在为了充分发挥SSR和SPA的优势
 把他的三件套都改造成了通用代码,可同时运行在node和浏览器中，暴露相同的API
 
 类似的还有[axios](https://github.com/axios/axios),在浏览器使用xhr发送请求,在服务器端使用http发送请求
-[https://github.com/axios/axios/tree/master/lib/adapters](https://github.com/axios/axios/tree/master/lib/adapters)
+<https://github.com/axios/axios/tree/master/lib/adapters>
 
 <slide :class="size-80 ">
 
@@ -163,13 +163,16 @@ export default context => {
   })
 }
 ```
+
 :::
 
 <slide :class="size-60 ">
 
+服务端接收到浏览器的的请求后
+
 ```js
 const createApp = require('./app')
-
+// server (raw node , connect ,express ,koa etg...)
 server.get('*', async (req, res) => {
   const context = {
     url: req.url
@@ -186,4 +189,61 @@ server.get('*', async (req, res) => {
     }
   }
 })
+```
+
+<slide :class="size-60 ">
+上述演示了vue在server端转换为html的过程
+但是，这样仅仅是一个模板引擎用法，
+Vue SSR的不同点在于客户端激活 (client-side hydration)
+
+<slide :class="size-60 ">
+服务端通过vue-router的懒加载和webpack的代码分割，实际上生成的html
+类似与浏览器请求特定页面的一个 **快照** 
+
+客户端有完整的代码，在请求到html后，会把common的模块和当前页面代码分割后的js拿下来，
+重新在客户端创建Vue对象，从而完成在客户端的数据绑定
+而在切换页面时，我们的老朋友
+vue-router又出场了
+
+在我们客户端使用$router.push或者\<router-link\>时
+浏览器**不会**再去请求服务端的匹配路由接口，而是从本地获取到的js中的vue-router进行匹配
+也就是说在第一次请求服务端后，不会再去请求（数据和静态资源除外），而是整个项目被转换成了一个spa项目
+
+<slide :class="size-60 ">
+原生a标签因为没有重写click事件，在页面跳转时会重新请求api
+
+<slide :class="size-60 ">
+tips:在ssr的请求过后，项目转换成spa，为什么chrome跳转到特定页面，右键查看源代码，还是可以看到所有渲染好的数据
+这个行为发生时，我们可以看到network除了第一次请求，有200的document对象，后续时没有的，查看源代码时，chrome发现当前url的document没有出现在最近的缓存中，于是它又发送了一次http请求，从而获取了渲染好的html，假如缓存击中，则不发送http请求，从本地获取源代码
+
+<slide :class="size-60 ">
+服务端渲染的优化
+三级缓存
+1.数据缓存
+lru-cache
+2.组件缓存
+url:VueComponent
+3.页面缓存
+
+```js
+const oldRenderRoute = renderer.renderRoute;
+renderer.renderRoute = async (route, context)=>{
+  const cacheKey = getCacheKey(route, context);
+  if (!cacheKey) return oldRenderRoute(route, context);
+  try {
+    const cachedResult = await cache.get(cacheKey);
+    if(cachedResult){
+      return cachedResult
+    }
+    const res = oldRenderRoute(route, context)
+    cache.set(cacheKey,res) ;
+    return res
+  } catch (err){
+    const res = oldRenderRoute(route, context)
+    cache.set(cacheKey,res) ;
+    return res
+  }
+  
+}
+
 ```

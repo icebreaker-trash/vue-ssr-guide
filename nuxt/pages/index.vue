@@ -8,7 +8,14 @@
 </template>
 
 <script>
-export default {}
+export default {
+  name: "Index",
+  asyncData() {
+    if (process.server) {
+      console.log(require("../api/modules/resolve"))
+    }
+  }
+}
 </script>
 
 <style></style>
